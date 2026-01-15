@@ -5,16 +5,12 @@
   "type": "module",
   "sideEffects": false,
   "files": [
-    "dist",
     "scripts"
   ],
   "bin": {
     "openbridge-helper": "scripts/cli.mjs"
   },
-  "scripts": {
-    "generate": "node scripts/generate-exports.mjs",
-    "build": "npm run generate && tsc"
-  },
+  "scripts": {},
   "devDependencies": {
     "typescript": "^5.3.3"
   },
