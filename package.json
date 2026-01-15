@@ -8,18 +8,12 @@
     "dist",
     "scripts"
   ],
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
   "bin": {
     "openbridge-helper": "scripts/cli.mjs"
   },
   "scripts": {
     "generate": "node scripts/generate-exports.mjs",
-    "build": "tsc"
+    "build": "npm run generate && tsc"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

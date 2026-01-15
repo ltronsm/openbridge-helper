@@ -33,7 +33,7 @@ This has a few drawbacks:
 With `openbridge-helper`:
 
 ```ts
-import { ObiApplications, ObcNavigationMenu } from "openbridge-helper";
+import { ObiApplications, ObcNavigationMenu } from "./openbridge-helper";
 ```
 
 Benefits:
@@ -86,7 +86,7 @@ After installation, run to create the export mappings:
 npx openbridge-helper
 ```
 
-This will generate files in `src/openbridge-helper/` and automatically add the directory to your `.gitignore`.
+This will generate `src/openbridge-helper/index.ts` and automatically add the directory to your `.gitignore`.
 
 If you update OpenBridge and need to refresh the exports:
 
@@ -120,8 +120,8 @@ If no supported OpenBridge package is found, the generator will fail with a clea
 ### Named imports (recommended)
 
 ```ts
-import { ObiApplications, ObiSettings } from "openbridge-helper";
-import { ObcNavigationMenu } from "openbridge-helper";
+import { ObiApplications, ObiSettings } from "./openbridge-helper";
+import { ObcNavigationMenu } from "./openbridge-helper";
 ```
 
 This gives the best tree‑shaking and the clearest intent.
@@ -131,13 +131,15 @@ This gives the best tree‑shaking and the clearest intent.
 ### Namespace import
 
 ```ts
-import * as OB from "openbridge-helper";
+import * as OB from "./openbridge-helper";
 
 <OB.ObiApplications />
 <OB.ObcNavigationMenu />
 ```
 
 This still tree‑shakes correctly as long as your bundler supports ESM tree‑shaking (Vite, Rollup, Webpack 5+).
+
+> **Note:** If your project uses path aliases (e.g., `@/` for `src/`), you can import from `@/openbridge-helper` instead of `./openbridge-helper`.
 
 ---
 
@@ -179,7 +181,7 @@ export { ObiApplications } from "@oicl/openbridge-webcomponents-react/icons/icon
 export { ObcNavigationMenu } from "@oicl/openbridge-webcomponents-react/components/navigation-menu/navigation-menu";
 ```
 
-These generated files are then re‑exported from the package root.
+This generated file can then be imported from your local project.
 
 ---
 
