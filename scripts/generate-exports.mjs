@@ -28,7 +28,7 @@ async function generateExports() {
     new URL(import.meta.resolve(`${PKG}/package.json`)).pathname
   );
 
-  const OUT_DIR = "src/openbridge-helper";
+  const OUT_DIR = "src";
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   function walk(dir) {
@@ -67,7 +67,7 @@ async function generateExports() {
     return lines.sort().join("\n");
   }
 
-  fs.writeFileSync("index.ts", generate("icons", "Obi") + "\n" + generate("components", "Obc"));
+  fs.writeFileSync("openbridge-helper.ts", generate("icons", "Obi") + "\n" + generate("components", "Obc"));
 
   console.log("✔ OpenBridge exports generated from", PKG);
 }
