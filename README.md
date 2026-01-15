@@ -86,6 +86,8 @@ After installation, run to create the export mappings:
 npx openbridge-helper
 ```
 
+This will generate files in `src/openbridge-helper/` and automatically add the directory to your `.gitignore`.
+
 If you update OpenBridge and need to refresh the exports:
 
 ```bash

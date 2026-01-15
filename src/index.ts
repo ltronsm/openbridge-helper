@@ -1,3 +1,3 @@
 // Main entry point for openbridge-helper
-export * from './generated/icons';
-export * from './generated/components';
+export * from './openbridge-helper/icons';
+export * from './openbridge-helper/components';

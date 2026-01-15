@@ -28,7 +28,7 @@ async function generateExports() {
     new URL(import.meta.resolve(`${PKG}/package.json`)).pathname
   );
 
-  const OUT_DIR = "src/generated";
+  const OUT_DIR = "src/openbridge-helper";
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   function walk(dir) {
