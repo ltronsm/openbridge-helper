@@ -75,7 +75,7 @@ try {
   }
 
   // Add path alias to tsconfig.json if it exists
-  const tsconfigPath = 'tsconfig.json';
+  const tsconfigPath = 'tsconfig.app.json';
   if (fs.existsSync(tsconfigPath)) {
     const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8'));
     if (!tsconfig.compilerOptions) tsconfig.compilerOptions = {};

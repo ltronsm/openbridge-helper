@@ -67,7 +67,7 @@ async function generateExports() {
     return lines.sort().join("\n");
   }
 
-  fs.writeFileSync("openbridge-helper.ts", generate("icons", "Obi") + "\n" + generate("components", "Obc"));
+  fs.writeFileSync(path.join(OUT_DIR, "openbridge-helper.ts"), generate("icons", "Obi") + "\n" + generate("components", "Obc"));
 
   console.log("✔ OpenBridge exports generated from", PKG);
 }
