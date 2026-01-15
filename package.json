@@ -1,6 +1,6 @@
 {
   "name": "openbridge-helper",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "DX helper for OpenBridge React providing typed, tree-shakable imports for all OpenBridge icons (Obi*) and components (Obc*).",
   "type": "module",
   "sideEffects": false,
