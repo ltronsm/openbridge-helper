@@ -1,0 +1,35 @@
+{
+  "name": "openbridge-helper",
+  "version": "0.1.0",
+  "description": "DX helper for OpenBridge React providing typed, tree-shakable imports for all OpenBridge icons (Obi*) and components (Obc*).",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "openbridge-helper": "scripts/cli.mjs"
+  },
+  "scripts": {
+    "generate": "node scripts/generate-exports.mjs",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "openbridge",
+    "react",
+    "icons",
+    "components",
+    "dx",
+    "developer-experience"
+  ],
+  "license": "MIT"
+}

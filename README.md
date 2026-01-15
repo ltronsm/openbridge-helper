@@ -68,15 +68,31 @@ Benefits:
 
 ## Installation
 
-```bash
-npm install openbridge-helper
-```
-
 You must already have OpenBridge installed:
 
 ```bash
 npm install @oicl/openbridge-webcomponents-react
 ```
+
+Then install the helper:
+
+```bash
+npm install openbridge-helper
+```
+
+After installation, run to create the export mappings:
+
+```bash
+npx openbridge-helper
+```
+
+If you update OpenBridge and need to refresh the exports:
+
+```bash
+npx openbridge-helper --refresh
+```
+
+
 If you are using JIP or unreleased OpenBridge versions distributed via GitHub Packages,
 follow the official OpenBridge installation instructions before using this helper.
 
