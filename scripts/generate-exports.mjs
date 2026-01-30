@@ -1,10 +1,20 @@
+
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 const CANDIDATES = [
   "@oicl/openbridge-webcomponents-react",
-  "@ocean-industries-concept-lab/openbridge-webcomponents-react"
+  "@ocean-industries-concept-lab/openbridge-webcomponents-react",
 ];
+
+// Unicode-safe JS identifier (covers ÆØÅ etc.)
+const IDENT_START = "[$_\\p{ID_Start}]";
+const IDENT_CONT = "[$_\\u200C\\u200D\\p{ID_Continue}]*";
+const IDENT = `${IDENT_START}${IDENT_CONT}`;
+
+// Only keep OpenBridge wrapper exports
+const OB_EXPORT = new RegExp(`^Ob`, "u");
 
 function resolveOpenBridgePackage() {
   for (const pkg of CANDIDATES) {
@@ -13,45 +23,106 @@ function resolveOpenBridgePackage() {
       return pkg;
     } catch {}
   }
-
   throw new Error(
     "No supported OpenBridge React package found.\n" +
-    "Install either:\n" +
-    "- @oicl/openbridge-webcomponents-react\n" +
-    "- @ocean-industries-concept-lab/openbridge-webcomponents-react"
+      "Install either:\n" +
+      "- @oicl/openbridge-webcomponents-react\n" +
+      "- @ocean-industries-concept-lab/openbridge-webcomponents-react"
   );
 }
 
-async function generateExports() {
-  const PKG = resolveOpenBridgePackage();
-  const ROOT = path.dirname(
-    new URL(import.meta.resolve(`${PKG}/package.json`)).pathname
+function uniq(arr) {
+  return [...new Set(arr)];
+}
+
+function walk(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return walk(full);
+    if (entry.isFile() && entry.name.endsWith(".js")) return full;
+    return [];
+  });
+}
+
+function extractExports(file) {
+  const content = fs.readFileSync(file, "utf8");
+  const names = new Set();
+
+  // export class X / export const X / export function X
+  const declRe = new RegExp(
+    `export\\s+(?:class|const|function)\\s+(${IDENT})`,
+    "gu"
   );
+  for (const m of content.matchAll(declRe)) names.add(m[1]);
 
-  const OUT_DIR = "src";
-  fs.mkdirSync(OUT_DIR, { recursive: true });
+  // export default class X / export default function X
+  const defRe = new RegExp(
+    `export\\s+default\\s+(?:class|function)\\s+(${IDENT})`,
+    "gu"
+  );
+  for (const m of content.matchAll(defRe)) names.add(m[1]);
 
-  function walk(dir) {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) return walk(full);
-      if (entry.isFile() && entry.name.endsWith(".js")) return full;
-      return [];
-    });
+  // export { A, B as C, default as D }
+  const bracesRe = /export\s*{\s*([^}]+)\s*}/g;
+  for (const m of content.matchAll(bracesRe)) {
+    const inner = m[1];
+
+    // Matches:
+    //  A
+    //  A as B
+    //  default as B
+    const itemRe = new RegExp(
+      `\\b(default|${IDENT})\\s*(?:as\\s*(${IDENT}))?`,
+      "gu"
+    );
+
+    for (const it of inner.matchAll(itemRe)) {
+      const left = it[1];       // default or identifier
+      const right = it[2];      // alias if any
+
+      if (left === "default" && right) names.add(right);
+      else if (right) names.add(right);
+      else names.add(left);
+    }
   }
 
-  function extractExports(file) {
-    const content = fs.readFileSync(file, "utf8");
-    return [...content.matchAll(/export\s+(?:class|const|function)\s+(Ob[ic][A-Z]\w+)/g)]
-      .map(m => m[1]);
-  }
+  return [...names].filter((n) => OB_EXPORT.test(n));
+}
 
-  function generate(subdir, prefix) {
-    const files = walk(path.join(ROOT, subdir));
-    const lines = [];
+function getPublishedTopLevelDirs(pkgJson, rootDir) {
+  const files = pkgJson.files ?? [];
+  const topDirs = files
+    .map((p) => p.replace(/^\.\//, ""))
+    .filter((p) => p.includes("/"))
+    .map((p) => p.split("/", 1)[0]);
 
-    for (const file of files) {
-      const exports = extractExports(file).filter(e => e.startsWith(prefix));
+  return uniq(topDirs).filter((d) => {
+    const full = path.join(rootDir, d);
+    return fs.existsSync(full) && fs.statSync(full).isDirectory();
+  });
+}
+
+export default async function generateExports() {
+  const PKG = resolveOpenBridgePackage();
+
+  // Windows-safe resolution: file URL -> OS path
+  const pkgJsonUrl = new URL(import.meta.resolve(`${PKG}/package.json`));
+  const pkgJsonPath = fileURLToPath(pkgJsonUrl);
+  const ROOT = path.dirname(pkgJsonPath);
+
+  const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
+  const folders = getPublishedTopLevelDirs(pkgJson, ROOT);
+
+  const OUT_FILE = path.join("src", "utils", "openbridge-helper", "index.ts");
+  fs.mkdirSync(path.dirname(OUT_FILE), { recursive: true });
+
+  // folder -> lines
+  const grouped = new Map();
+
+  for (const folder of folders) {
+    const absFolder = path.join(ROOT, folder);
+    for (const file of walk(absFolder)) {
+      const exports = extractExports(file);
       if (!exports.length) continue;
 
       const rel = file
@@ -60,24 +131,28 @@ async function generateExports() {
         .replace(/\.js$/, "");
 
       for (const name of exports) {
-        lines.push(`export { ${name} } from "${rel}";`);
+        const line = `export { ${name} } from "${rel}";`;
+        if (!grouped.has(folder)) grouped.set(folder, []);
+        grouped.get(folder).push(line);
       }
     }
-
-    return lines.sort().join("\n");
   }
 
-  fs.writeFileSync(path.join(OUT_DIR, "openbridge-helper.ts"), generate("icons", "Obi") + "\n" + generate("components", "Obc"));
+  // Build output (sorted groups + sorted lines)
+  const folderOrder = [...grouped.keys()].sort((a, b) => a.localeCompare(b, "en"));
+  const out = [];
 
+  out.push("// Generated by openbridge-helper. Do not edit manually.");
+  out.push("");
+
+  for (const folder of folderOrder) {
+    out.push(`// === ${folder} ===`);
+    const lines = grouped.get(folder).slice().sort((a, b) => a.localeCompare(b, "en"));
+    out.push(...lines);
+    out.push("");
+  }
+
+  fs.writeFileSync(OUT_FILE, out.join("\n"), "utf8");
   console.log("✔ OpenBridge exports generated from", PKG);
-}
-
-export default generateExports;
-
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  generateExports().catch(error => {
-    console.error('Error:', error.message);
-    process.exit(1);
-  });
+  console.log("✔ Output:", OUT_FILE);
 }
